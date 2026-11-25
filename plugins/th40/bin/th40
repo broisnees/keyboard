@@ -155,7 +155,8 @@ def _keylog(h):
         else:
             layer = {4: "SYMBOL", 6: "SYSTEM", 7: "NAV"}[col]
             held = (t - th["t"]) & 0xFFFF
-            if d >= arm or held >= d + hold or held >= 230:
+            # Space L has no arm: only the thumb staying down decides.
+            if (d >= arm and col != 4) or held >= d + hold or held >= 230:
                 how = layer
             else:
                 how = "space + letter (roll)"
@@ -199,7 +200,7 @@ def _keylog(h):
                     after_space = prev is not None and prev[1] in THUMBS
                     open_thumbs[key] = {"t": t, "gap": gap, "next": None,
                                         "chord": any(k in THUMBS for k in down),
-                                        "flow": gap is not None and gap < min(flow, 500) and not after_space}
+                                        "flow": key != 4 and gap is not None and gap < min(flow, 500) and not after_space}
                 elif key in THUMBS and key in open_thumbs:
                     verdict(key, t)
                 if pressed:

@@ -85,12 +85,15 @@
 // All three thumbs. A space just typed doesn't count as flow, so "x = 1" can
 // reach "=". Live-tunable without a flash: `th40 tune flow <ms>`.
 //
-// Short on purpose. 110ms covers a genuine
+// Space R and the middle thumb only; Space L has none (keymap.c). 150 since
+// 2026-11-25: keylog showed spaces after 126-138 ms gaps landing on release.
+//
+// Short on purpose. It covers a genuine
 // roll - space and the next letter overlapping - while still leaving the thumb
 // layers reachable mid-sentence, because deliberately reaching for one always has
 // a beat of thought in front of it. Raise it if a fast space still turns a layer
 // on; lower it if "word then symbols" stops reaching _NUM.
-#define FLOW_TAP_TERM_THUMB 110
+#define FLOW_TAP_TERM_THUMB 150
 
 // A space bar tap is 80-250ms. A thumb deliberately held down for a layer is held
 // far longer than that, and the tap still fires on release, so this costs zero
@@ -134,9 +137,10 @@
 // A key pressed INSIDE the arm: the thumb becomes the layer if it is still down
 // this long after that key went down, and a space + letter if it lifts first.
 // Measured 2026-10-06 (th40 keylog): typing rolls lift the thumb 0-18 ms after the
-// next key, symbol chords hold it 250+ ms. 50 is ~3x the worst roll. Live:
+// next key, symbol chords hold it 250+ ms. 30 (was 50, 2026-11-25) still clears the
+// worst roll and makes a symbol appear 20 ms sooner. Live:
 // `th40 tune overlap <ms>`. See get_tapping_term() in keymap.c.
-#define THUMB_CHORD_HOLD 50
+#define THUMB_CHORD_HOLD 30
 
 // ---------------------------------------------------------------------------
 // Combos

@@ -444,7 +444,7 @@ thumbs and `LT(_NAV,KC_TAB)`. What remains, and why:
 | Setting | Why |
 |---|---|
 | `CHORDAL_HOLD` | Same-hand chords settle as **taps**. The thumbs are `'*'` in `chordal_hold_layout`, so the one key it still governs is Tab: Tab + a left-hand key settles as Tab on that key's press (`action_tapping.c:455`, consulted before hold-on-other-key-press). A Tab rolled into the next letter can't land on Nav; the cost is that Nav's left half is reached from `Space R`, not Tab. Read from the source, not measured. |
-| `FLOW_TAP_TERM 200` | The define is the Flow Tap switch. The value was the mods' window and is unused: `get_flow_tap_term()` gives the thumbs `FLOW_TAP_TERM_THUMB` (110 ms) and everything else 0. |
+| `FLOW_TAP_TERM 200` | The define is the Flow Tap switch. The value was the mods' window and is unused: `get_flow_tap_term()` gives the thumbs `FLOW_TAP_TERM_THUMB` (150 ms, `Space R` and the middle thumb only) and everything else 0. |
 | no `PERMISSIVE_HOLD` | See below. |
 | `QUICK_TAP_TERM 0` | Tap a thumb, then hold it, and you get the layer rather than auto-repeating spaces. Key repeat is `QK_REP`. |
 
@@ -490,7 +490,7 @@ Three changes, none of which cost typing latency:
 |---|---|
 | `THUMB_TAPPING_TERM 230` in `get_tapping_term()` | A still-held thumb waits 230 ms before becoming a layer. **Free**: the tap fires on RELEASE, so a 90 ms space still lands at 90 ms whatever the term is. The term only governs a key that is still down. |
 | `RETRO_TAPPING_PER_KEY` + `get_retro_tapping()` on the thumbs | Hold a thumb through a thinking pause, release it having pressed nothing, and the space is sent anyway. Pressing any key during the hold clears `retro_tap_primed` (`action.c:86`), so a real layer chord never emits a stray space. |
-| `FLOW_TAP_TERM_THUMB 110` in `get_flow_tap_term()` | Inside 110 ms of the previous typing key the thumb is settled as a tap on the **keydown**, so the space is instant and the layer cannot engage at all. |
+| `FLOW_TAP_TERM_THUMB 150` in `get_flow_tap_term()` | Not for `Space L`. Inside 150 ms of the previous typing key the thumb is settled as a tap on the **keydown**, so the space is instant and the layer cannot engage at all. |
 
 That last one replaced a blanket `if (IS_QK_LAYER_TAP(keycode)) return 0;` justified as "a layer
 hold must always be reachable". The blanket version is why every space in every sentence landed on
@@ -535,7 +535,7 @@ produced digits instead of spaces. Two guards, covering the two cases:
 
 | Case | What stops the misfire |
 |---|---|
-| Roll mid-sentence: previous key within 110 ms | Flow Tap already settled the space as a tap on its keydown, so the thumb cannot be a hold at all and this rule never runs |
+| Roll mid-sentence: previous key within 150 ms | Flow Tap already settled the space as a tap on its keydown, so the thumb cannot be a hold at all and this rule never runs |
 | Roll starting after a pause, where Flow Tap is out | The 80 ms arm. A roll overlaps the thumb almost immediately; deliberately reaching for a layer does not |
 
 Order of evaluation in `action_tapping.c:455-472`: Chordal Hold is consulted first, and only if it
@@ -586,6 +586,21 @@ Removed the same day. I type spaces with **both** thumbs, so every thumb keeps F
 **Both spaces, either order.** `_NUM` had `KC_SPC` on the `Space R` cell, so `Space L` first
 typed a space instead of reaching System. Transparent now (`LT(_NAV,KC_SPC)`), and
 `thumb_layer_on()` makes the second thumb skip Flow Tap and the arm.
+
+**Space L lost Flow Tap and the arm (2026-11-25).** Symbols come straight after letters
+(`foo(`, `x[0]`, `y!`). Keylog: three `Space L` holds of 280-346 ms, each started 31-70 ms after
+a letter, were all forced to a space by Flow Tap. Nothing at keydown separates "symbol after a
+letter" from "space after a letter"; the hold length does. `Space L` now decides only by the
+release rule: lifted within `THUMB_CHORD_HOLD` (30 ms, was 50) of the next key is space + letter,
+still down is the symbol, alone is a space. The arm survives only for `Space R` joining it (the
+System chord). Its space now lands on release; in two captures I typed no spaces with `Space L`.
+The same capture showed `Space R` spaces after 126-138 ms gaps landing on release, so
+`FLOW_TAP_TERM_THUMB` went 110 → 150. Remaining lag: a space after a real pause lands on release,
+49-84 ms late. That is inherent to a layer-tap space bar.
+
+**Combos: no mid-word exemptions.** `M , . ' J K` belonged to the `-` `_` `:` and `jk` combos,
+which were exempt from `COMBO_FLOW_TERM`, so every press of those keys waited `COMBO_TERM` even
+mid-sentence. All nine combos now skip in flow; those four need a short pause first.
 
 **Measuring instead of guessing.** `th40 keylog` streams a ring of physical press/release times
 (`CLAUDE_SUB_KEYLOG`, logged in `pre_process_record_kb`, so before combos and tap-hold reorder

@@ -396,6 +396,15 @@ bool get_hold_on_other_key_press(uint16_t keycode, keyrecord_t *record) {
     if (is_thumb_layer_tap(keycode) && thumb_layer_on()) {
         return true;
     }
+    // Space L (Symbols) never settles on the next keydown: its chord is decided by
+    // the release rule in get_tapping_term() alone. Symbols are typed straight
+    // after a letter ("foo(", "x[0]"), so neither the arm nor Flow Tap can tell
+    // them from a space; how long the thumb stays down can.
+    // The one exception is the other space bar: Space L then Space R is the
+    // System chord, and it keeps the 80 ms arm it always had.
+    if (keycode == LT(_NUM, KC_SPC)) {
+        return other_thumb_down(record->event.key) && timer_elapsed(record->event.time) >= thumb_arm_time;
+    }
     if (is_thumb_layer_tap(keycode)) {
         return timer_elapsed(record->event.time) >= thumb_arm_time;
     }
@@ -472,6 +481,13 @@ uint16_t get_flow_tap_term(uint16_t keycode, keyrecord_t *record, uint16_t prev_
     if (!is_thumb_layer_tap(keycode)) {
         return 0;
     }
+    // No Flow Tap on Space L. Measured 2026-11-25 (th40 keylog): three symbol
+    // holds of 280-346 ms, each started 31-70 ms after a letter, were all forced to
+    // a space. Symbols follow letters with no space in between, so "recent letter"
+    // says nothing about Space L. Its space now lands on release.
+    if (keycode == LT(_NUM, KC_SPC)) {
+        return 0;
+    }
     if (thumb_layer_on()) {
         return 0; // a chord's second thumb: never forced to a space
     }
@@ -487,7 +503,7 @@ uint16_t get_flow_tap_term(uint16_t keycode, keyrecord_t *record, uint16_t prev_
     // tap on the KEYDOWN, so inside this window the space is instant and cannot
     // become a layer at all.
     //
-    // 110ms, short on purpose, so that "type a word, then hold the thumb for
+    // 150ms, short on purpose, so that "type a word, then hold the thumb for
     // symbols" still reaches _NUM - that reach always has a pause in front of it,
     // a roll never does.
     return thumb_flow_term;
@@ -983,9 +999,11 @@ const uint16_t PROGMEM combo_coln[]   = {KC_DOT, KC_QUOT, COMBO_END};
 // second key is always let through (combo->state says the first is down), or the
 // chord could never complete. Added on request 2026-10-05, unmeasured.
 //
-// Exempt, because they ARE used mid-word: ,+. (_ in snake_case), M+, (-), .+'
-// (:), and J+K (vim's escape, typed straight after the text). So M , . ' J K
-// still wait; Q W Z X C V N P type instantly in flow.
+// No exemptions since 2026-11-25. ,+. M+, .+' and J+K used to fire mid-word, which
+// meant every press of M , . ' J K waited out COMBO_TERM even mid-sentence - the
+// largest always-on latency left in the firmware. Now _ - : and jk-Escape need
+// the same short pause as every other combo, and all fourteen keys type
+// instantly in flow.
 //
 // pre_process_record_kb() stamps every physical keydown before process_combo()
 // runs (quantum.c:278), so prev_press_time is the press BEFORE this one. Releases
@@ -996,9 +1014,6 @@ static uint16_t prev_press_time = 0;
 
 bool combo_should_trigger(uint16_t combo_index, combo_t *combo, uint16_t keycode, keyrecord_t *record) {
     if (!record->event.pressed || combo->state) {
-        return true;
-    }
-    if (combo->keys == combo_unds || combo->keys == combo_mins || combo->keys == combo_coln || combo->keys == combo_vimesc) {
         return true;
     }
     return TIMER_DIFF_16(record->event.time, prev_press_time) >= COMBO_FLOW_TERM;

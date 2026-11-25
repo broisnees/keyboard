@@ -207,6 +207,14 @@ EOF
   same day and typed "space, letter" for real chords. Don't bring it back. Flow Tap's window runs
   from the previous key's *release* (`action_tapping.c:1005`), and a space no longer counts as
   flow for the next thumb.
+- **`Space L` has no Flow Tap and no arm** (2026-11-25). Symbols follow letters directly
+  (`foo(`), and Flow Tap forced three measured 280-346 ms symbol holds to spaces. It decides by
+  the release rule only; the arm stays just for the `Space R` System chord. Flow is 150 ms and
+  `THUMB_CHORD_HOLD` 30 ms. Don't give `Space L` Flow Tap back.
+- **All combos skip mid-word, none are exempt.** Exempting `_ - :` and `jk` made every
+  `M , . ' J K` press wait `COMBO_TERM` mid-sentence.
+- **`flash-th40.sh` mount race:** under `pipefail`, a `udisksctl mount` that lost to the desktop
+  auto-mount exited the script silently with nothing written. Fixed with `|| true`.
 - **Tap-Super / hold-Super+Alt is impossible on this board, so don't re-attempt it.**
   `MT(MOD_LGUI|MOD_LALT, KC_LGUI)` resolves as *hold* as soon as another key joins it -
   permissive hold was on for mod-taps then - so `Super`+`W` emits `Gui`+`Alt`+`W` and

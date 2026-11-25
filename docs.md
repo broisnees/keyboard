@@ -68,9 +68,12 @@ Three things changed, and none of them made typing slower:
   the key, not when the timer runs out. A 90 ms space still lands at 90 ms.
 - **A long space is still a space.** Hold a thumb through a pause, let go without pressing anything
   else, and you get your space. Press something during the hold and you get the layer, as before.
-- **A space typed inside 110 ms of the previous letter is sent on the keydown**, so mid-sentence it
-  is instant and cannot turn a layer on at all. To reach Symbols mid-word, pause for a beat first
-  and then hold (or tap `123` and the key, which never has to guess) - which is what reaching for a layer feels like anyway.
+- **On `Space R` and the middle thumb, a space typed inside 150 ms of the previous letter is sent on
+  the keydown**, so mid-sentence it is instant and cannot turn a layer on at all. Reaching Nav
+  mid-word needs a beat of pause first.
+- **`Space L` reaches Symbols straight after a letter.** Hold it and press the key: `foo(` and
+  `x[0]` work with no pause. Lift the thumb within 30 ms of the next key and it reads as a space
+  plus that letter. The price: a space typed with `Space L` appears when you lift it.
 
 Then a fourth, because the first three made the layers themselves slow to reach: 230 ms was the
 only way in, so every layer chord began with a quarter-second wait, and anything typed during that
@@ -225,9 +228,9 @@ Mid-word that wait is pure lag, so a combo key pressed within 120 ms of the prev
 instantly. A combo fires when you start it after a short pause, which is how you reach for one
 anyway.
 
-The exceptions are the combos you use mid-word: `_`, `-`, `:` and `J`+`K`. Those always work, so
-`M , . ' J K` still wait. `Q W Z X C V N P` are instant while you type. If a combo you meant comes
-out as two letters, pause a beat first, or lower `COMBO_FLOW_TERM` in `keymap/config.h`.
+There are no exceptions: all fourteen combo keys are instant while you type, and `_`, `-`, `:` and
+`J`+`K` need the same short pause as the rest (in snake_case, a beat before `,`+`.`). If a combo you
+meant comes out as two letters, pause a beat first, or lower `COMBO_FLOW_TERM` in `keymap/config.h`.
 
 ### The prefix key - removed
 
