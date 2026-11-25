@@ -51,7 +51,7 @@ MNT=""
 for _ in $(seq 1 10); do
   MNT=$(findmnt -no TARGET "$DEV" 2>/dev/null || true)
   [[ -n $MNT ]] && break
-  MNT=$(udisksctl mount -b "$DEV" 2>/dev/null | sed -n 's/.* at \(.*\)\.$/\1/p')
+  MNT=$(udisksctl mount -b "$DEV" 2>/dev/null | sed -n 's/.* at \(.*\)\.$/\1/p' || true)
   [[ -n $MNT ]] && break
   sleep 1
 done
